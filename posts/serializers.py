@@ -1,15 +1,16 @@
 from rest_framework import serializers
 from .models import Post, Comment, News
+from accounts.models import User
 
 
 class PostSerializer(serializers.ModelSerializer):
-
-    read_only_field = serializers.ReadOnlyField(source="author")
+    author = serializers.StringRelatedField(source='user.first_name')
+    # author = serializers.PrimaryKeyRelatedField(default=serializers.CurrentUserDefault(), queryset=User.objects.all())
+    # read_only_field = serializers.ReadOnlyField(source="author")
 
     class Meta:
         model = Post
-        # exclude = ("agreement", "disagreement", "answer")
-        fields = ("title", "content", "comments", "read_only_field")
+        fields = ("author", "title", "content", "comments")
 
 
 class CommentSerializer(serializers.ModelSerializer):

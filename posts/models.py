@@ -1,4 +1,5 @@
-from django.contrib.auth.models import User
+# from django.contrib.auth.models import User
+from accounts.models import User
 from django.db import models
 
 
@@ -20,7 +21,6 @@ class Post(models.Model):
     comments = models.ManyToManyField(Comment, null=True)
     agreement = models.IntegerField(default=0)
     disagreement = models.IntegerField(default=0)
-    answer = models.TextField(default="")
     created_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -32,7 +32,7 @@ class Post(models.Model):
 
 class News(models.Model):
 
-    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, editable=True)
     content = models.TextField()
     comments = models.ManyToManyField(Comment, null=True)
     created_date = models.DateTimeField(auto_now_add=True)
