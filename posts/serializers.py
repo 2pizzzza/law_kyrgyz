@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from .models import Post, Comment, News
+
 from accounts.models import User
+
+from .models import Comment, News, Post
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -17,14 +19,12 @@ class PostSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Comment
-        fields = '__all__'
+        fields = "__all__"
 
 
 class NewsSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = News
-        fields = '__all__'
+        fields = "__all__"

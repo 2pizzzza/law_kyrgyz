@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "law-kyrgyz"
+version = "0.1.0"
+description = ""
+authors = ["Narashi Kuga <orenvady@gmail.com>"]
+readme = "README.md"
+packages = [{include = "law_kyrgyz"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+django = "^4.2.5"
+djangorestframework = "^3.14.0"
+pillow = "^10.0.1"
+django-cors-headers = "^4.2.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
