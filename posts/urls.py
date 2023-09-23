@@ -1,15 +1,13 @@
 from django.urls import path
-from .views import PostAPIView, PostCreateUpdateDeleteAPIView
+from .views import *
 from . import views
 
 urlpatterns = [
-    path('posts/create', views.PostListCreateView.as_view(), name='post-list-create'),
-    path('posts/<int:pk>/', views.PostRetrieveUpdateDeleteView.as_view(), name='post-detail'),
-    path('comments/', views.CommentListCreateView.as_view(), name='comment-list-create'),
-    path('comments/<int:pk>/', views.CommentRetrieveUpdateDeleteView.as_view(), name='comment-detail'),
-    path('posts/', PostAPIView.as_view(), name='post'),
-    path('posts/<int:pk>/', PostCreateUpdateDeleteAPIView.as_view(), name='post'),
-    path('posts/<int:pk>/upvote/', views.PostUpvoteView.as_view(), name='post-upvote'),
-    path('posts/<int:pk>/downvote/', views.PostDownvoteView.as_view(), name='post-downvote'),
+    path('posts/post', PostAPIView.as_view(), name='post-post'),
+    path('posts/<int:pk>/', PostCreateUpdateDeleteAPIView.as_view(), name='post-pk'),
+    path('comments/post', CommentAPIView.as_view(), name='comment-post'),
+    path('comments/<int:pk>/', CommentCreateUpdateDeleteAPIView.as_view(), name='comment-pk'),
+    path('news/post', NewsAPIView.as_view(), name='news-post'),
+    path('news/<int:pk>/', NewsCreateUpdateDeleteAPIView.as_view(), name='news-pk'),
 ]
 

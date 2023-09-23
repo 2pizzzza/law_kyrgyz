@@ -2,10 +2,11 @@ from django.shortcuts import render
 from rest_framework import permissions, status
 from .serializers import PostSerializer, CommentSerializer, NewsSerializer
 from .models import Post, Comment, News
-from rest_framework.generics import ListCreateAPIView, CreateAPIView
+from accounts.models import User
+from rest_framework.generics import ListCreateAPIView, CreateAPIView, ListAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
-
+from .blacklist import blacklist
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
@@ -33,51 +34,52 @@ class PostDownvoteView(generics.UpdateAPIView):
         instance.save()
         return instance
 
-
-class PostListCreateView(generics.ListCreateAPIView):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    # permission_classes = [IsAuthenticated]
-
-
-class PostRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    # permission_classes = [IsAuthenticated]
-
-
-class CommentListCreateView(generics.ListCreateAPIView):
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    # permission_classes = [IsAuthenticated]
-
-
-class CommentRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    # permission_classes = [IsAuthenticated]
-
-
 class VoteView(generics.CreateAPIView):
     pass
 
 
 class PostAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     serializer_class = PostSerializer
+    queryset = Post.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
     def post(self, request):
         if request.user.is_superuser:
             return Response({'message': 'Администратор не может отправлять посты'})
         serializer = PostSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        text = serializer.validated_data.get('content')
+        for word in blacklist:
+            if word in str(text):
+                print('Сработало')
+                return Response({'message': 'Пожалуйста не используйте маты'})
+        user = User.objects.filter(User.is_authenticated)
         serializer.validated_data['author'] = request.user
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+# class PostListAPIView(ListAPIView):
+#     serializer_class = PostSerializer
+#     queryset = Post.objects.all()
+#
+#     def get(self, request, *args, **kwargs):
+#         return super().get(request, *args, **kwargs)
+
+
 class PostCreateUpdateDeleteAPIView(APIView):
     serializer_class = PostSerializer
+
+    # def get_all(self):
+    #     try:
+    #         post = Post.objects.all()
+    #         serializer = PostSerializer(post)
+    #         return Response(serializer.data, status=status.HTTP_200_OK)
+    #     except Post.DoesNotExist:
+    #         return Response({'message': 'Пост не найден'}, status=status.HTTP_404_NOT_FOUND)
 
     def get(self, pk):
         try:
@@ -107,8 +109,12 @@ class PostCreateUpdateDeleteAPIView(APIView):
 
 
 class CommentAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     serializer_class = CommentSerializer
+    queryset = Comment.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
     def post(self, request):
         if request.user.is_superuser:
@@ -153,6 +159,10 @@ class CommentCreateUpdateDeleteAPIView(APIView):
 class NewsAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = NewsSerializer
+    queryset = News.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
     def post(self, request):
         if not request.user.is_superuser:

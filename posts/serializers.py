@@ -4,13 +4,16 @@ from accounts.models import User
 
 
 class PostSerializer(serializers.ModelSerializer):
-    author = serializers.StringRelatedField(source='user.first_name')
+    # author = serializers.StringRelatedField(source='user.first_name')
     # author = serializers.PrimaryKeyRelatedField(default=serializers.CurrentUserDefault(), queryset=User.objects.all())
-    # read_only_field = serializers.ReadOnlyField(source="author")
+    # author = serializers.ReadOnlyField(source="author")
+    # agreements = serializers.ReadOnlyField(source="agreements")
+    # disagreement = serializers.ReadOnlyField(source="disagreement")
 
     class Meta:
         model = Post
-        fields = ("author", "title", "content", "comments")
+        # fields = ("author", "title", "content", "comments")
+        fields = "__all__"
 
 
 class CommentSerializer(serializers.ModelSerializer):
