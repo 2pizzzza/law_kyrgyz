@@ -1,15 +1,30 @@
 from rest_framework import permissions, status
-from .serializers import PostSerializer, CommentSerializer, NewsSerializer
-from .models import Post, Comment, News
-from accounts.models import User
+from .serializers import PostSerializer, CommentSerializer, NewsSerializer, GuidesSerializer
+from .models import Post, Comment, News, Guides
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .blacklist import blacklist
-from rest_framework.permissions import IsAuthenticated
 
+
+def swear_words_validator(field_1, field_2, blacklist):
+    str_1 = str(field_1)
+    str_2 = str(field_2)
+    for word in blacklist:
+        if word.lower() in str_1.lower() or str_2.lower():
+            if any(c.isupper() for c in word):
+                return Response({'message': 'Пожалуйста не используйте маты'})
+
+
+def authorization_validator(request):
+    if not request.user.is_authenticated:
+        return Response({'message': 'Пользователь не авторизован'})
+
+
+def admin_validator(request, str_1):
+    if request.user.is_superuser:
+        return Response({'message': f'{str_1}'})
 
 class PostAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
     serializer_class = PostSerializer
 
     def get(self, request):
@@ -18,16 +33,13 @@ class PostAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        if request.user.is_superuser:
-            return Response({'message': 'Администратор не может отправлять посты'})
+        authorization_validator(request)
+        admin_validator(request, 'Администратор не может отправлять посты')
         serializer = PostSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        text = serializer.validated_data.get('content')
-        for word in blacklist:
-            if word in str(text):
-                print('Сработало')
-                return Response({'message': 'Пожалуйста не используйте маты'})
-        # user = User.objects.filter(User.is_authenticated)
+        content = serializer.validated_data.get('content')
+        title = serializer.validated_data.get('title')
+        swear_words_validator(content, title, blacklist)
         serializer.validated_data['author'] = request.user
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -45,6 +57,7 @@ class PostRetrieveUpdateDeleteAPIView(APIView):
             return Response({'message': 'Пост не найден'}, status=status.HTTP_404_NOT_FOUND)
 
     def put(self, request, pk):
+        authorization_validator(request)
         try:
             post = Post.objects.get(pk=pk)
             serializer = PostSerializer(post, data=request.data)
@@ -54,7 +67,8 @@ class PostRetrieveUpdateDeleteAPIView(APIView):
         except Post.DoesNotExist:
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
-    def delete(self, pk):
+    def delete(self, request, pk):
+        authorization_validator(request)
         try:
             post = Post.objects.get(pk=pk)
             post.delete()
@@ -64,7 +78,6 @@ class PostRetrieveUpdateDeleteAPIView(APIView):
 
 
 class CommentAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
     serializer_class = CommentSerializer
 
     def get(self, request):
@@ -73,10 +86,12 @@ class CommentAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        if request.user.is_superuser:
-            return Response({'message': 'Администратор не может отправлять комментарии'})
+        authorization_validator(request)
+        admin_validator(request, 'Администратор не может отправлять комментарии')
         serializer = CommentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        text = serializer.validated_data.get('text')
+        swear_words_validator(text, None, blacklist)
         serializer.validated_data['author'] = request.user
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -94,6 +109,7 @@ class CommentRetrieveUpdateDeleteAPIView(APIView):
             return Response({'message': 'Комментарий не найден'}, status=status.HTTP_404_NOT_FOUND)
 
     def put(self, request, pk):
+        authorization_validator(request)
         try:
             comment = Comment.objects.get(pk=pk)
             serializer = CommentSerializer(comment, data=request.data)
@@ -103,7 +119,9 @@ class CommentRetrieveUpdateDeleteAPIView(APIView):
         except Comment.DoesNotExist:
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
-    def delete(self, pk):
+    def delete(self, request, pk):
+        if not request.user.is_authenticated:
+            return Response({'message': 'Пользователь не авторизован'})
         try:
             comment = Comment.objects.get(pk=pk)
             comment.delete()
@@ -113,7 +131,6 @@ class CommentRetrieveUpdateDeleteAPIView(APIView):
 
 
 class NewsAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = NewsSerializer
     def get(self, request):
         news = News.objects.all()
@@ -121,8 +138,10 @@ class NewsAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
+        authorization_validator(request)
         if not request.user.is_superuser:
             return Response({'message': 'Пользователь не может создавать новости'})
+
         serializer = NewsSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.validated_data['author'] = request.user
@@ -139,22 +158,74 @@ class NewsRetrieveUpdateDeleteAPIView(APIView):
             serializer = NewsSerializer(news)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except News.DoesNotExist:
-            return Response({'message': 'Комментарий не найден'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': 'Новость не найдена'}, status=status.HTTP_404_NOT_FOUND)
 
     def put(self, request, pk):
+        authorization_validator(request)
         try:
             news = News.objects.get(pk=pk)
-            serializer = CommentSerializer(news, data=request.data)
+            serializer = NewsSerializer(news, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         except News.DoesNotExist:
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
-    def delete(self, pk):
+    def delete(self, request, pk):
+        authorization_validator(request)
         try:
             news = News.objects.get(pk=pk)
             news.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except News.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class GuidesAPIView(APIView):
+    serializer_class = GuidesSerializer
+    def get(self, request):
+        guides = Guides.objects.all()
+        serializer = GuidesSerializer(guides, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        authorization_validator(request)
+        if not request.user.is_superuser:
+            return Response({'message': 'Пользователь не может создавать гайды'})
+        serializer = GuidesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data['author'] = request.user
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class GuidesRetrieveUpdateDeleteAPIView(APIView):
+    serializer_class = GuidesSerializer
+
+    def get(self, pk):
+        try:
+            guides = Guides.objects.get(pk=pk)
+            serializer = GuidesSerializer(guides)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Guides.DoesNotExist:
+            return Response({'message': 'Гайд не найден'}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, pk):
+        authorization_validator(request)
+        try:
+            guides = Guides.objects.get(pk=pk)
+            serializer = GuidesSerializer(guides, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Guides.DoesNotExist:
+            return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, pk):
+        authorization_validator(request)
+        try:
+            guides = Guides.objects.get(pk=pk)
+            guides.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Guides.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)

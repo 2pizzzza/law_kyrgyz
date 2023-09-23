@@ -1,15 +1,22 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Notification
 
+
+class NotificationsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
+        notification = serializers.ReadOnlyField(source='notification')
         fields = ['id', 'first_name', 'last_name', 'email',
                   'middle_name', 'phone_number', 'password',
                   'gender', 'citizenship', 'date_of_birth',
                   'document_id', 'date_of_expiry', 'place_of_birth',
-                  'authority', 'date_of_issue', 'ethnicity', "personal_number"
+                  'authority', 'date_of_issue', 'ethnicity', "personal_number",
+                  "notifications"
                   ]
         extra_kwargs = {'password': {'write_only': True}}
 
@@ -30,6 +37,7 @@ class UserSerializer(serializers.ModelSerializer):
             ethnicity=validated_data['ethnicity'],
             personal_number=validated_data['personal_number'],
             place_of_birth=validated_data['place_of_birth'],
+            notifications=validated_data['notifications'],
         )
         user.set_password(validated_data['password'])
         user.save()
