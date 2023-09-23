@@ -1,12 +1,20 @@
 from accounts.models import User
 from django.db import models
 
+CATEGORIES = (("Образование", "Образование"),
+              ("Медицина", "Медицина"),
+              ("Природа", "Природа"),
+              ("Судебная", "Судебная"),
+              ("Бизнес", "Бизнес"),
+              ("СМИ", "СМИ"),
+              )
 
 class Post(models.Model):
 
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, default=None)
     title = models.CharField(max_length=200)
     content = models.TextField()
+    category = models.CharField(max_length=100, choices=CATEGORIES, default='')
     agreement = models.IntegerField(default=0)
     disagreement = models.IntegerField(default=0)
     created_date = models.DateTimeField(auto_now_add=True)
@@ -27,7 +35,6 @@ class Comment(models.Model):
 
     class Meta:
         ordering = ["created_date"]
-
 
     def __str__(self):
         return f"Created by {self.author}"

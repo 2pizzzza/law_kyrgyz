@@ -1,4 +1,5 @@
-from rest_framework import permissions, status
+from django.db.models import Q
+from rest_framework import status
 from .serializers import PostSerializer, CommentSerializer, NewsSerializer, GuidesSerializer
 from .models import Post, Comment, News, Guides
 from rest_framework.views import APIView
@@ -24,13 +25,32 @@ def admin_validator(request, str_1):
     if request.user.is_superuser:
         return Response({'message': f'{str_1}'})
 
+
 class PostAPIView(APIView):
     serializer_class = PostSerializer
 
     def get(self, request):
+        agreement = request.GET.get('agreement')
+        disagreement = request.GET.get('disagreement')
+        category = request.GET.get('category')
+        search_query = request.GET.get('search')
         posts = Post.objects.all()
+        if agreement:
+            posts = posts.filter(agreement=agreement)
+        elif disagreement:
+            posts = posts.filter(disagreement=disagreement)
+        elif category:
+            posts = posts.filte(category=category)
+
+        if search_query:
+            posts = posts.filter(
+                Q(agreement__icontains=search_query) |
+                Q(disagreement__icontains=search_query) |
+                Q(category__icontains=search_query)
+            )
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
     def post(self, request):
         authorization_validator(request)
