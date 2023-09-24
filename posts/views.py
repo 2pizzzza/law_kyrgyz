@@ -21,8 +21,8 @@ def authorization_validator(request):
         return Response({'message': 'Пользователь не авторизован'})
 
 
-def admin_validator(request, str_1):
-    if request.user.is_superuser:
+def admin_validator(request, isTrue, str_1):
+    if request.user.is_superuser == isTrue:
         return Response({'message': f'{str_1}'})
 
 
@@ -51,10 +51,9 @@ class PostAPIView(APIView):
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
     def post(self, request):
         authorization_validator(request)
-        admin_validator(request, 'Администратор не может отправлять посты')
+        admin_validator(request, True, 'Администратор не может отправлять посты')
         serializer = PostSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         content = serializer.validated_data.get('content')
@@ -107,7 +106,7 @@ class CommentAPIView(APIView):
 
     def post(self, request):
         authorization_validator(request)
-        admin_validator(request, 'Администратор не может отправлять комментарии')
+        admin_validator(request, True, 'Администратор не может отправлять комментарии')
         serializer = CommentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         text = serializer.validated_data.get('text')
@@ -140,8 +139,7 @@ class CommentRetrieveUpdateDeleteAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, pk):
-        if not request.user.is_authenticated:
-            return Response({'message': 'Пользователь не авторизован'})
+        authorization_validator(request)
         try:
             comment = Comment.objects.get(pk=pk)
             comment.delete()
@@ -159,8 +157,7 @@ class NewsAPIView(APIView):
 
     def post(self, request):
         authorization_validator(request)
-        if not request.user.is_superuser:
-            return Response({'message': 'Пользователь не может создавать новости'})
+        admin_validator(request, False, 'Пользователь не может создавать новости')
 
         serializer = NewsSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -210,8 +207,7 @@ class GuidesAPIView(APIView):
 
     def post(self, request):
         authorization_validator(request)
-        if not request.user.is_superuser:
-            return Response({'message': 'Пользователь не может создавать гайды'})
+        admin_validator(request,  False, 'Пользователь не может создавать гайды')
         serializer = GuidesSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.validated_data['author'] = request.user
