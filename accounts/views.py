@@ -68,6 +68,7 @@ class UserLogoutAPIView(APIView):
 
 class NotificationsAPIView(APIView):
     serializer_class = NotificationsSerializer
+
     def get(self, request):
         notifications = Notification.objects.all()
         serializer = NotificationsSerializer(notifications, many=True)
