@@ -1,26 +1,36 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
 from django.db import models
+
+
+class Notification(models.Model):
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    category = models.CharField(max_length=100)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_date"]
 
 
 class User(AbstractUser):
 
-    gender = models.TextField()
-    citizenship = models.TextField()
-    date_of_birth = models.TextField()
-    document_id = models.TextField()
-    date_of_expiry = models.TextField()
-    place_of_birth = models.TextField()
-    authority = models.TextField()
-    date_of_issue = models.TextField()
-    ethnicity = models.TextField()
-    personal_number = models.TextField()
+    gender = models.CharField(max_length=50)
+    citizenship = models.CharField(max_length=50)
+    date_of_birth = models.CharField(max_length=50)
+    document_id = models.CharField(max_length=50)
+    date_of_expiry = models.CharField(max_length=50)
+    place_of_birth = models.CharField(max_length=50)
+    authority = models.CharField(max_length=50)
+    date_of_issue = models.CharField(max_length=50)
+    ethnicity = models.CharField(max_length=50)
+    personal_number = models.CharField(max_length=50)
 
     username = None
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=128)
     middle_name = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=100)
+    notification = models.ForeignKey(Notification, on_delete=models.CASCADE, null=True)
 
     groups = models.ManyToManyField(
         'auth.Group',
@@ -39,4 +49,4 @@ class User(AbstractUser):
     )
 
     def __str__(self):
-        return self.email
+        return self.first_name + " " + self.last_name
